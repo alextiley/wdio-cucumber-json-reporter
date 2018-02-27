@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/AlexGalichenko/wdio-cucumber-json-reporter/issues"
   },
-  "homepage": "https://github.com/AlexGalichenko/wdio-cucumber-json-reporter#readme"
+  "homepage": "https://github.com/AlexGalichenko/wdio-cucumber-json-reporter#readme",
+  "dependencies": {
+    "mkdirp": "^0.5.1"
+  }
 }
