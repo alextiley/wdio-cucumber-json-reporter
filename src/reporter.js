@@ -29,6 +29,14 @@ class CucumberJSONReporter extends EventEmitter {
     this.reportIdentifier = 0;
     this.jsonBuilder = new JSONBuilder();
 
+    // this.on('suite:end', (suite) => {
+      // This is a feature, not a scenario
+      // if (suite.parent === null) {
+      //   console.log('suite:end');
+      //   console.log(suite);
+      // }
+    // });
+
     /**
      * @todo Collect unique reports for each browsing session or 'capability'
      * At the moment this hook is only called once. Rewrite to collect multiple JSON's and use suite:end
