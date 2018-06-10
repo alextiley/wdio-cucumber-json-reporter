@@ -35,10 +35,11 @@ Feel free to raise a pull request, or throw me a ticket via the issues section.
 
 ## Known issues / missing features ##
 
-* Add support for screenshots via cucumber attachments/"embeddings"
-* Add browser name to feature metadata
+* Add support for screenshots via cucumber attachments
+* Add browser version to feature metadata, if obtainable
 * Add metadata for test start time, end time and total duration
 * Add metadata for feature count, scenario/scenario outline counts and step counts
 * Add metadata for failing test count
-* Step duration and line number is experimental - It's nigh on impossible to fetch the correct step data if the step contains a variable
-* Svme report file names based on browser name and timestamp
+* Step keyword retrieval is experimental - see if gherkin parser can calculate this for us
+* Save report file names based on browser name and timestamp
+* Retrieve arguments supplied to each step - doesn't currently look possible

@@ -123,8 +123,8 @@ class CucumberJSONReporter extends EventEmitter {
         tags: test.tags,
         uri: test.file,
         parentId: test.parent,
-        keyword: step.keyword ? step.keyword.trim() : test.keyword,
-        line: step.location ? step.location.line : 1,
+        keyword: step.keyword,
+        line: this.getStepLineNumber(test),
         result: {
           status: 'passed',
           duration: test.duration * 1000000,
@@ -140,6 +140,7 @@ class CucumberJSONReporter extends EventEmitter {
     });
 
     this.on('test:fail', (test) => {
+
       const step = this.getStep(test.file, test.title);
 
       const stepData = {
@@ -150,8 +151,8 @@ class CucumberJSONReporter extends EventEmitter {
         tags: test.tags,
         uri: test.file,
         parentId: test.parent,
-        keyword: step.keyword ? step.keyword.trim() : test.keyword,
-        line: step.location ? step.location.line : 1,
+        keyword: step.keyword,
+        line: this.getStepLineNumber(test),
         result: {
           status: 'failed',
           duration: test.duration * 1000000,
@@ -173,6 +174,7 @@ class CucumberJSONReporter extends EventEmitter {
     });
 
     this.on('test:pending', (test) => {
+
       const step = this.getStep(test.file, test.title);
 
       const stepData = {
@@ -183,8 +185,8 @@ class CucumberJSONReporter extends EventEmitter {
         tags: test.tags,
         uri: test.file,
         parentId: test.parent,
-        keyword: step.keyword ? step.keyword.trim() : test.keyword,
-        line: step.location ? step.location.line : 1,
+        keyword: step.keyword,
+        line: this.getStepLineNumber(test),
         result: {
           status: 'skipped',
           duration: test.duration * 1000000,
@@ -288,6 +290,16 @@ class CucumberJSONReporter extends EventEmitter {
     });
 
     return step;
+  }
+
+  getStepLineNumber(suite) {
+    let line = Number(suite.uid.replace(suite.title, ''));
+
+    if (isNaN(line)) {
+      line = -1;
+    }
+
+    return line;
   }
 }
 
