@@ -1,6 +1,6 @@
 {
   "name": "wdio-json-cucumber-reporter",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "JSON Cucumber reporter",
   "main": "lib/reporter.js",
   "directories": {
