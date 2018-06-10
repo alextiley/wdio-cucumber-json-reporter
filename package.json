@@ -1,10 +1,14 @@
 {
   "name": "wdio-json-cucumber-reporter",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "JSON Cucumber reporter",
   "main": "lib/reporter.js",
   "directories": {
     "lib": "lib"
+  },
+  "scripts": {
+    "build": "babel src -d lib",
+    "prepublish": "yarn build"
   },
   "repository": {
     "url": "git+https://github.com/alextiley/wdio-cucumber-json-reporter.git"
@@ -15,8 +19,13 @@
     "reporter"
   ],
   "author": "Alex Tiley",
+  "license": "MIT",
   "dependencies": {
     "gherkin": "^5.1.0",
     "mkdirp": "^0.5.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0"
   }
 }
