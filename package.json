@@ -1,5 +1,5 @@
 {
-  "name": "wdio-cucumber-json-reporter",
+  "name": "wdio-json-cucumber-reporter",
   "version": "1.0.0",
   "description": "JSON Cucumber reporter",
   "main": "lib/reporter.js",
