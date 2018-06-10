@@ -29,17 +29,8 @@ class CucumberJSONReporter extends EventEmitter {
     this.reportIdentifier = 0;
     this.jsonBuilder = new JSONBuilder();
 
-    // this.on('suite:end', (suite) => {
-      // This is a feature, not a scenario
-      // if (suite.parent === null) {
-      //   console.log('suite:end');
-      //   console.log(suite);
-      // }
-    // });
-
     /**
-     * @todo Collect unique reports for each browsing session or 'capability'
-     * At the moment this hook is only called once. Rewrite to collect multiple JSON's and use suite:end
+     * Once all tests completed, iterate over reports and generate multiple JSON reports
      */
     this.on('end', () => {
 
@@ -50,21 +41,40 @@ class CucumberJSONReporter extends EventEmitter {
 
       try {
         const dir = path.resolve(this.options.outputDir);
-        const filename = (this.reportIdentifier === 0 ? 'report' : `report_${this.reportIdentifier}`) + '.json';
-        const filepath = path.join(dir, filename);
 
         mkdirp.sync(dir);
 
         this.jsonBuilder.clearEmptyFeatures();
 
-        fs.writeFileSync(filepath, JSON.stringify(this.jsonBuilder.features));
+        Object.keys(this.jsonBuilder.reports).forEach((cid) => {
+          const report = this.jsonBuilder.reports[cid];
+          const filename = (this.reportIdentifier === 0 ? 'report' : `report_${this.reportIdentifier}`) + '.json';
+          const filepath = path.join(dir, filename);
 
-        if (this.options.cucumberJsonReporter.silent !== true) {
-          console.log(`Wrote json report to [${this.options.outputDir}].`);
-        }
-        this.reportIdentifier += 1;
+          fs.writeFileSync(filepath, JSON.stringify(report.features));
+
+          if (this.options.cucumberJsonReporter.silent !== true) {
+            console.log(`Wrote json report '${filename}' to [${this.options.outputDir}].`);
+          }
+          this.reportIdentifier += 1;
+        });
       } catch (e) {
         console.log(`Failed to write json report to [${this.options.outputDir}]. Error: ${e}`);
+      }
+    });
+
+    /**
+     * Decorate features with meta data whenever a feature finishes
+     */
+    this.on('suite:end', (suite) => {
+      if (suite.parent === null) {
+        this.jsonBuilder.addMeta({
+          cid: suite.cid,
+          browser: suite.runner[suite.cid].browserName,
+          deviceName: this.options.cucumberJsonReporter.deviceName
+            ? this.options.cucumberJsonReporter.deviceName
+            : 'Local test environment'
+        });
       }
     });
 
@@ -73,6 +83,7 @@ class CucumberJSONReporter extends EventEmitter {
         const scenario = this.getScenario(test.file, test.title);
 
         this.jsonBuilder.addScenario({
+          cid: test.cid,
           type: 'scenario',
           keyword: scenario.keyword,
           description: scenario.description,
@@ -87,6 +98,7 @@ class CucumberJSONReporter extends EventEmitter {
         const feature = this.getFeature(test.file);
 
         this.jsonBuilder.addFeature({
+          cid: test.cid,
           type: 'feature',
           keyword: feature.keyword,
           name: feature.name,
@@ -104,6 +116,7 @@ class CucumberJSONReporter extends EventEmitter {
       const step = this.getStep(test.file, test.title);
 
       const stepData = {
+        cid: test.cid,
         type: 'step',
         name: test.title,
         id: test.uid,
@@ -116,6 +129,7 @@ class CucumberJSONReporter extends EventEmitter {
           status: 'passed',
           duration: test.duration * 1000000,
         },
+        embeddings: []
       };
 
       if (stepData.keyword === 'After' || stepData.keyword === 'Before') {
@@ -129,6 +143,7 @@ class CucumberJSONReporter extends EventEmitter {
       const step = this.getStep(test.file, test.title);
 
       const stepData = {
+        cid: test.cid,
         type: 'step',
         name: test.title,
         id: test.uid,
@@ -141,6 +156,7 @@ class CucumberJSONReporter extends EventEmitter {
           status: 'failed',
           duration: test.duration * 1000000,
         },
+        embeddings: [],
       };
 
       if (test.err.stack) {
@@ -160,6 +176,7 @@ class CucumberJSONReporter extends EventEmitter {
       const step = this.getStep(test.file, test.title);
 
       const stepData = {
+        cid: test.cid,
         type: 'step',
         name: test.title,
         id: test.uid,
@@ -172,6 +189,7 @@ class CucumberJSONReporter extends EventEmitter {
           status: 'skipped',
           duration: test.duration * 1000000,
         },
+        embeddings: [],
       };
 
       if (stepData.keyword === 'After' || stepData.keyword === 'Before') {

@@ -1,10 +1,22 @@
+import os from 'os';
+
 class JSONBuilder {
   constructor() {
-    this.features = [];
+    this.reports = {};
+  }
+
+  initialiseReport(cid) {
+    if (typeof this.reports[cid] === 'undefined') {
+      this.reports[cid] = {};
+      this.reports[cid].features = [];
+    }
+    return this.reports[cid];
   }
 
   addFeature(options) {
-    this.features.push({
+    const report = this.initialiseReport(options.cid);
+
+    report.features.push({
       keyword: options.keyword,
       type: options.type,
       name: options.name,
@@ -19,8 +31,10 @@ class JSONBuilder {
 
 
   addScenario(options) {
-    const featureIndex = this.features.findIndex(feature => feature.id === options.parentId);
-    const scenarioIndex = this.features[featureIndex].elements
+    const report = this.initialiseReport(options.cid);
+
+    const featureIndex = report.features.findIndex(feature => feature.id === options.parentId);
+    const scenarioIndex = report.features[featureIndex].elements
       .findIndex(scenario => scenario.id === options.id);
 
     const scenarioData = {
@@ -36,19 +50,21 @@ class JSONBuilder {
     };
 
     if (scenarioIndex === -1) {
-      this.features[featureIndex].elements.push(scenarioData);
+      report.features[featureIndex].elements.push(scenarioData);
     }
   }
 
   addStep(options) {
-    const featureIndex = this.features
+    const report = this.initialiseReport(options.cid);
+
+    const featureIndex = report.features
       .findIndex(feature => feature.elements.find(scenario => scenario.id === options.parentId));
 
-    const scenarioIndex = this
+    const scenarioIndex = report
       .features[featureIndex]
       .elements.findIndex(scenario => scenario.id === options.parentId);
 
-    const stepIndex = this
+    const stepIndex = report
       .features[featureIndex]
       .elements[scenarioIndex]
       .steps.findIndex(step => step.id === options.id);
@@ -61,21 +77,28 @@ class JSONBuilder {
       tags: options.tags,
       uri: options.uri,
       result: options.result,
-      embeddings: options.embeddings,
+      embeddings: options.embeddings.map(embedding => ({
+        data: embedding.data,
+        media: {
+          type: embedding.mimeType,
+        },
+      })),
     };
 
     if (stepIndex === -1) {
-      this.features[featureIndex].elements[scenarioIndex].steps.push(stepData);
+      report.features[featureIndex].elements[scenarioIndex].steps.push(stepData);
     } else {
-      this.features[featureIndex].elements[scenarioIndex].steps[stepIndex] = stepData;
+      report.features[featureIndex].elements[scenarioIndex].steps[stepIndex] = stepData;
     }
   }
 
   addHook(options) {
-    const featureIndex = this.features
+    const report = this.initialiseReport(options.cid);
+
+    const featureIndex = report.features
       .findIndex(feature => feature.elements.find(scenario => scenario.id === options.parentId));
 
-    const scenarioIndex = this
+    const scenarioIndex = report
       .features[featureIndex]
       .elements.findIndex(scenario => scenario.id === options.parentId);
 
@@ -95,11 +118,54 @@ class JSONBuilder {
       })),
     };
 
-    this.features[featureIndex].elements[scenarioIndex].steps.push(stepData);
+    report.features[featureIndex].elements[scenarioIndex].steps.push(stepData);
+  }
+
+  /**
+   * @todo add further meta data
+   * test execution start/end/total
+   * feature|scenario|scenariooverview|step counts
+   * failing test count
+   * passing test count
+   * @see https://github.com/evrycollin/wdio-allure-addons-reporter/issues/1 for an idea of how to get more data
+   */
+  addMeta(options) {
+    const report = this.initialiseReport(options.cid);
+    const platformId = this.getPlatformId();
+
+    report.features.forEach((feature) => {
+      feature.metadata = {
+        browser: {
+          name: options.browser,
+          // @todo - check if it's possible to get the browser version from wdio events
+          version: options.browser.charAt(0).toUpperCase() + options.browser.slice(1),
+        },
+        device: options.deviceName,
+        platform: {
+          name: platformId,
+          version: `${os.type()} ${os.release()}`,
+        },
+      };
+    })
   }
 
   clearEmptyFeatures() {
-    this.features = this.features.filter(feature => feature.elements.length > 0);
+    Object.keys(this.reports).forEach((key) => {
+      this.reports[key].features = this.reports[key].features.filter(
+        feature => feature.elements.length > 0
+      );
+    });
+  }
+
+  /**
+   * Grabs meta data about the OS for the report output
+   */
+  getPlatformId() {
+    switch (process.platform) {
+      case 'darwin': return 'osx';
+      case 'win32': return 'windows';
+      default: return 'linux';
+    }
   }
 }
 

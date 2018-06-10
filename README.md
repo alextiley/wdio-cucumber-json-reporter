@@ -18,7 +18,8 @@ I have adapted and added missing properties to the JSON report. It's quite rough
     outputDir: 'some/output/dir',
     cucumberJsonReporter: {
       silent: true, // true|false - supresses message notifying of report output
-      baseDir: __dirname // Should be your project's root directory, used to determine where your feature files are stored
+      baseDir: __dirname, // Should be your project's root directory, used to determine where your feature files are stored
+      deviceName: 'Local test environment' // Meta data for multiple-cucumber-html-reporter
     }
   }
 }
@@ -31,3 +32,13 @@ I have adapted and added missing properties to the JSON report. It's quite rough
 ## Bug reporting ##
 
 Feel free to raise a pull request, or throw me a ticket via the issues section.
+
+## Known issues / missing features ##
+
+* Add support for screenshots via cucumber attachments/"embeddings"
+* Add browser name to feature metadata
+* Add metadata for test start time, end time and total duration
+* Add metadata for feature count, scenario/scenario outline counts and step counts
+* Add metadata for failing test count
+* Step duration and line number is experimental - It's nigh on impossible to fetch the correct step data if the step contains a variable
+* Svme report file names based on browser name and timestamp
