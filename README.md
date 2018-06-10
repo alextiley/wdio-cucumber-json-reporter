@@ -12,3 +12,7 @@ I have adapted and added missing properties to the JSON report. It's quite rough
 2. Add 'json-cucumber' to the list of reporters in wdio.conf.js
 3. Run your tests
 4. Added bonus: `yarn add multiple-cucumber-html-reporter` and follow their readme to create a beautiful HTML report.
+
+## Bug reporting ##
+
+Feel free to raise a pull request, or throw me a ticket via the issues section.
