@@ -13,14 +13,6 @@ class CucumberJSONReporter extends EventEmitter {
   constructor(baseReporter, config, options = {}) {
     super();
 
-    if (
-      typeof options.cucumberJsonReporter === 'undefined' ||
-      typeof options.cucumberJsonReporter.baseDir === 'undefined'
-    ) {
-      console.log('Cannot write json report: missing reporters.cucumberJsonReporter.baseDir in webdriver.io config file.');
-      return;
-    }
-
     this.baseReporter = baseReporter;
     this.config = config;
     this.options = options;
@@ -53,7 +45,7 @@ class CucumberJSONReporter extends EventEmitter {
 
           fs.writeFileSync(filepath, JSON.stringify(report.features));
 
-          if (this.options.cucumberJsonReporter.silent !== true) {
+          if (this.options.cucumberJsonReporter && this.options.cucumberJsonReporter.verbose === true) {
             console.log(`Wrote json report '${filename}' to [${this.options.outputDir}].`);
           }
           this.reportIdentifier += 1;
@@ -88,6 +80,7 @@ class CucumberJSONReporter extends EventEmitter {
           keyword: scenario.keyword,
           description: scenario.description,
           line: scenario.location.line,
+          // @todo add this scenario's step arguments to end of string
           name: scenario.name,
           id: test.uid,
           parentId: test.parent,
@@ -113,7 +106,11 @@ class CucumberJSONReporter extends EventEmitter {
 
     this.on('test:pass', (test) => {
 
-      const step = this.getStep(test.file, test.title);
+      const step = this.getStep(test.file, this.getLineNumberFromUid(test.uid));
+
+      if (step === null) {
+        return;
+      }
 
       const stepData = {
         cid: test.cid,
@@ -124,7 +121,7 @@ class CucumberJSONReporter extends EventEmitter {
         uri: test.file,
         parentId: test.parent,
         keyword: step.keyword,
-        line: this.getStepLineNumber(test),
+        line: this.getLineNumberFromUid(test.uid),
         result: {
           status: 'passed',
           duration: test.duration * 1000000,
@@ -141,7 +138,11 @@ class CucumberJSONReporter extends EventEmitter {
 
     this.on('test:fail', (test) => {
 
-      const step = this.getStep(test.file, test.title);
+      const step = this.getStep(test.file, this.getLineNumberFromUid(test.uid));
+
+      if (step === null) {
+        return;
+      }
 
       const stepData = {
         cid: test.cid,
@@ -152,7 +153,7 @@ class CucumberJSONReporter extends EventEmitter {
         uri: test.file,
         parentId: test.parent,
         keyword: step.keyword,
-        line: this.getStepLineNumber(test),
+        line: this.getLineNumberFromUid(test.uid),
         result: {
           status: 'failed',
           duration: test.duration * 1000000,
@@ -175,7 +176,11 @@ class CucumberJSONReporter extends EventEmitter {
 
     this.on('test:pending', (test) => {
 
-      const step = this.getStep(test.file, test.title);
+      const step = this.getStep(test.file, this.getLineNumberFromUid(test.uid));
+
+      if (step === null) {
+        return;
+      }
 
       const stepData = {
         cid: test.cid,
@@ -186,7 +191,7 @@ class CucumberJSONReporter extends EventEmitter {
         uri: test.file,
         parentId: test.parent,
         keyword: step.keyword,
-        line: this.getStepLineNumber(test),
+        line: this.getLineNumberFromUid(test.uid),
         result: {
           status: 'skipped',
           duration: test.duration * 1000000,
@@ -208,7 +213,7 @@ class CucumberJSONReporter extends EventEmitter {
    * @returns {number|*}
    */
   parseFeature(filePath) {
-    const featurePath = path.join(this.options.cucumberJsonReporter.baseDir, filePath);
+    const featurePath = path.join(process.cwd(), filePath);
     const featureText = fs.readFileSync(featurePath).toString();
 
     const parser = new Gherkin.Parser(new Gherkin.AstBuilder());
@@ -264,42 +269,48 @@ class CucumberJSONReporter extends EventEmitter {
   }
 
   /**
-   * Given a gherkin file path and step text, finds the step with the relevant
+   * Given a gherkin file path and line number, finds the step from the relevant
    * .feature file and returns the step's meta data.
    *
-   * Experimental - will provide inaccurate results at present
-   * It's harder (if not impossible) to fetch the correct step as the step text could contain variable substitution
-   *
-   * @todo revisit this, can we figure out the correct step using test runner scenario data (do we have this)?
-   *
    * @param filePath
-   * @param stepTextFromRunner
+   * @param stepLineNumber
    * @returns {{}}
    */
-  getStep(filePath, stepTextFromRunner) {
-    let step = {};
+  getStep(filePath, stepLineNumber) {
+    let ret = null;
     const feature = this.getFeature(filePath);
+    const BreakException = {};
 
-    feature.children.forEach((scenario) => {
-      scenario.steps.forEach((currStep) => {
-        const stepTextWithoutArgs = currStep.text.replace(/<\w+>.*/g, '').trim();
-        if (stepTextFromRunner.indexOf(stepTextWithoutArgs) !== -1) {
-          step = currStep;
-        }
+    // Exit early
+    try {
+      feature.children.forEach((scenario) => {
+        scenario.steps.forEach((step) => {
+          if (step.location.line === stepLineNumber) {
+            ret = step;
+            throw BreakException;
+          }
+        });
       });
-    });
-
-    return step;
-  }
-
-  getStepLineNumber(suite) {
-    let line = Number(suite.uid.replace(suite.title, ''));
-
-    if (isNaN(line)) {
-      line = -1;
+    } catch (e) {
+      if (e !== BreakException) throw e;
     }
 
-    return line;
+    return ret;
+  }
+
+  /**
+   * The UID returned from wdio contains the step's line number from the .feature file
+   * This helper will extract it from the UID string
+   * @param uid
+   * @returns {number}
+   */
+  getLineNumberFromUid(uid) {
+    let line = uid.match(/\d+$/);
+
+    if (line === null || !Array.isArray(line) || isNaN(Number(line[0]))) {
+      return -1;
+    }
+    return Number(line);
   }
 }
 
