@@ -7,6 +7,7 @@ const mkdirp = require('mkdirp');
 const fs = require('fs');
 const path = require('path');
 const Gherkin = require('gherkin');
+const jsdiff = require('diff');
 
 class CucumberJSONReporter extends EventEmitter {
 
@@ -59,6 +60,7 @@ class CucumberJSONReporter extends EventEmitter {
      * Decorate features with meta data whenever a feature finishes
      */
     this.on('suite:end', (suite) => {
+      // Feature
       if (suite.parent === null) {
         this.jsonBuilder.addMeta({
           cid: suite.cid,
@@ -66,6 +68,13 @@ class CucumberJSONReporter extends EventEmitter {
           deviceName: this.options.cucumberJsonReporter && this.options.cucumberJsonReporter.deviceName
             ? this.options.cucumberJsonReporter.deviceName
             : 'Local test environment'
+        });
+      // Scenario
+      } else {
+        this.jsonBuilder.appendScenarioArgumentsToTitle({
+          cid: suite.cid,
+          id: suite.uid,
+          parentId: suite.parent
         });
       }
     });
@@ -120,6 +129,7 @@ class CucumberJSONReporter extends EventEmitter {
         uri: test.file,
         parentId: test.parent,
         keyword: step.keyword,
+        arguments: this.getArgumentsFromStep(step.text, test.title),
         line: this.getLineNumberFromUid(test.uid),
         result: {
           status: 'passed',
@@ -152,6 +162,7 @@ class CucumberJSONReporter extends EventEmitter {
         uri: test.file,
         parentId: test.parent,
         keyword: step.keyword,
+        arguments: this.getArgumentsFromStep(step.text, test.title),
         line: this.getLineNumberFromUid(test.uid),
         result: {
           status: 'failed',
@@ -182,16 +193,18 @@ class CucumberJSONReporter extends EventEmitter {
       }
 
       const isPending = this.hasUndefinedStepMessage(test.title);
+      const runnerTitle = this.removeUndefinedStepFromTitle(test.title);
 
       const stepData = {
         cid: test.cid,
         type: 'step',
-        name: this.removeUndefinedStepFromTitle(test.title),
+        name: runnerTitle,
         id: test.uid,
         tags: test.tags,
         uri: test.file,
         parentId: test.parent,
         keyword: step.keyword,
+        arguments: this.getArgumentsFromStep(step.text, runnerTitle),
         line: this.getLineNumberFromUid(test.uid),
         result: {
           status: isPending ? 'pending' : 'skipped',
@@ -326,6 +339,19 @@ class CucumberJSONReporter extends EventEmitter {
       return -1;
     }
     return Number(line);
+  }
+
+  getArgumentsFromStep(definitionName, testRunnerName) {
+    let args = [];
+    try {
+      definitionName = definitionName.replace(/[<>]+/g, '');
+
+      args = jsdiff.diffWords(definitionName, testRunnerName)
+        .filter(diff => (diff.added === true))
+        .map(diff => diff.value);
+    } catch (e) {}
+
+    return args;
   }
 }
 

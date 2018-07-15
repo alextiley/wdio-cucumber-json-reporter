@@ -1,4 +1,5 @@
 import os from 'os';
+import _ from 'lodash';
 
 class JSONBuilder {
   constructor() {
@@ -47,6 +48,7 @@ class JSONBuilder {
       uri: options.uri,
       line: options.line,
       steps: [],
+      arguments: [],
     };
 
     if (scenarioIndex === -1) {
@@ -92,6 +94,9 @@ class JSONBuilder {
     } else {
       scenario.steps[stepIndex] = stepData;
     }
+    // Attach arguments to the scenario.
+    // At the end of report generation, these argumentss can be appended to the scenario title
+    scenario.arguments = _.union(scenario.arguments, options.arguments);
   }
 
   addHook(options) {
@@ -149,6 +154,28 @@ class JSONBuilder {
         },
       };
     })
+  }
+
+  /**
+   * Given a scenario with an array of arguments, flatten the arguments into
+   * a comma delmited string and append them to the scenario title
+   * The arguments array is also cleaned up as this is not part of the scenario JSON spec
+   * and is currently just used for convenience
+   * @param options
+   */
+  appendScenarioArgumentsToTitle(options) {
+    const report = this.initialiseReport(options.cid);
+
+    const featureIndex = report.features.findIndex(feature => feature.id === options.parentId);
+    const scenarioIndex = report.features[featureIndex].elements
+      .findIndex(scenario => scenario.id === options.id);
+
+    const scenario = report.features[featureIndex].elements[scenarioIndex];
+
+    if (scenario.arguments.length > 0) {
+      scenario.name += ` (${scenario.arguments.join(', ')})`;
+    }
+    delete scenario.arguments;
   }
 
   clearEmptyFeatures() {
