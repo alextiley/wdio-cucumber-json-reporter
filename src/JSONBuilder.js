@@ -85,10 +85,12 @@ class JSONBuilder {
       })),
     };
 
+    const scenario = report.features[featureIndex].elements[scenarioIndex];
+
     if (stepIndex === -1) {
-      report.features[featureIndex].elements[scenarioIndex].steps.push(stepData);
+      scenario.steps.push(stepData);
     } else {
-      report.features[featureIndex].elements[scenarioIndex].steps[stepIndex] = stepData;
+      scenario.steps[stepIndex] = stepData;
     }
   }
 

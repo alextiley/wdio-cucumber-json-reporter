@@ -80,7 +80,6 @@ class CucumberJSONReporter extends EventEmitter {
           keyword: scenario.keyword,
           description: scenario.description,
           line: scenario.location.line,
-          // @todo add this scenario's step arguments to end of string
           name: scenario.name,
           id: test.uid,
           parentId: test.parent,
@@ -106,7 +105,7 @@ class CucumberJSONReporter extends EventEmitter {
 
     this.on('test:pass', (test) => {
 
-      const step = this.getStep(test.file, this.getLineNumberFromUid(test.uid));
+      const step = this.getStepByLineNumber(test.file, this.getLineNumberFromUid(test.uid));
 
       if (step === null) {
         return;
@@ -138,7 +137,7 @@ class CucumberJSONReporter extends EventEmitter {
 
     this.on('test:fail', (test) => {
 
-      const step = this.getStep(test.file, this.getLineNumberFromUid(test.uid));
+      const step = this.getStepByLineNumber(test.file, this.getLineNumberFromUid(test.uid));
 
       if (step === null) {
         return;
@@ -176,7 +175,7 @@ class CucumberJSONReporter extends EventEmitter {
 
     this.on('test:pending', (test) => {
 
-      const step = this.getStep(test.file, this.getLineNumberFromUid(test.uid));
+      const step = this.getStepByLineNumber(test.file, this.getLineNumberFromUid(test.uid));
 
       if (step === null) {
         return;
@@ -289,10 +288,10 @@ class CucumberJSONReporter extends EventEmitter {
    * .feature file and returns the step's meta data.
    *
    * @param filePath
-   * @param stepLineNumber
+   * @param line
    * @returns {{}}
    */
-  getStep(filePath, stepLineNumber) {
+  getStepByLineNumber(filePath, line) {
     let ret = null;
     const feature = this.getFeature(filePath);
     const BreakException = {};
@@ -301,7 +300,7 @@ class CucumberJSONReporter extends EventEmitter {
     try {
       feature.children.forEach((scenario) => {
         scenario.steps.forEach((step) => {
-          if (step.location.line === stepLineNumber) {
+          if (step.location.line === line) {
             ret = step;
             throw BreakException;
           }
