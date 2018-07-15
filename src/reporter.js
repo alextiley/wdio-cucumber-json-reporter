@@ -63,7 +63,7 @@ class CucumberJSONReporter extends EventEmitter {
         this.jsonBuilder.addMeta({
           cid: suite.cid,
           browser: suite.runner[suite.cid].browserName,
-          deviceName: this.options.cucumberJsonReporter.deviceName
+          deviceName: this.options.cucumberJsonReporter && this.options.cucumberJsonReporter.deviceName
             ? this.options.cucumberJsonReporter.deviceName
             : 'Local test environment'
         });

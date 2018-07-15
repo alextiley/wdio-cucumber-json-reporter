@@ -1,7 +1,7 @@
 {
   "name": "wdio-json-cucumber-reporter",
   "version": "1.2.0",
-  "description": "JSON Cucumber reporter",
+  "description": "Generates a JSON report for cucumber via webdriver.io",
   "main": "lib/reporter.js",
   "directories": {
     "lib": "lib"
