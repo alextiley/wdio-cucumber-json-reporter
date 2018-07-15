@@ -12,7 +12,7 @@ I have adapted and added missing properties to the JSON report. It's quite rough
 1. To install, run `yarn add wdio-json-cucumber-reporter` or `npm install wdio-json-cucumber-reporter`
 2. Add `json-cucumber` to the list of reporters in `wdio.conf.js` (see below).
 3. Run your tests
-4. Added bonus: `yarn add multiple-cucumber-html-reporter` and follow their readme to create a beautiful HTML report.
+4. Added bonus: `yarn add multiple-cucumber-html-reporter` and adapt the example config below.
 
 #### wdio.conf.js ####
 ```javascript
@@ -30,6 +30,28 @@ I have adapted and added missing properties to the JSON report. It's quite rough
   ...
 }
 ```
+
+## Integrating with multiple-cucumber-html-reporter
+
+This repository was originally created so that I could integrate my work project with `multiple-cucumber-html-reporter`. Here's an example of how to get it working.
+
+As long as the JSON reports are generated, you can then add something like the below to your `wdio.conf.js` onComplete hook. Make sure you set the paths correctly.
+
+```javascript
+  ...
+  onComplete: () => {
+    if (existsSync('./some/output/dir/report.json')) {
+      htmlReporter.generate({
+        pageTitle: `My report page title`,
+        reportName: `Cucumber test report`,
+        disableLog: true,
+        jsonDir: './some/output/dir/',
+        reportPath: './some/output/dir/'
+      });
+    }
+  },
+  ...
+``` 
 
 ## Bug reporting ##
 
