@@ -182,10 +182,12 @@ class CucumberJSONReporter extends EventEmitter {
         return;
       }
 
+      const isPending = this.hasUndefinedStepMessage(test.title);
+
       const stepData = {
         cid: test.cid,
         type: 'step',
-        name: test.title,
+        name: this.removeUndefinedStepFromTitle(test.title),
         id: test.uid,
         tags: test.tags,
         uri: test.file,
@@ -193,7 +195,7 @@ class CucumberJSONReporter extends EventEmitter {
         keyword: step.keyword,
         line: this.getLineNumberFromUid(test.uid),
         result: {
-          status: 'skipped',
+          status: isPending ? 'pending' : 'skipped',
           duration: test.duration * 1000000,
         },
         embeddings: [],
@@ -205,6 +207,20 @@ class CucumberJSONReporter extends EventEmitter {
         this.jsonBuilder.addStep(stepData);
       }
     });
+  }
+
+  /**
+   * Determines whether a spec title indicates where it is undefined or not
+   * wdio spec.title contains " (undefined step)" if not implemented.
+   * @param title
+   * @returns {boolean}
+   */
+  hasUndefinedStepMessage(title) {
+    return (title.trim().indexOf(' (undefined step)') > -1);
+  }
+
+  removeUndefinedStepFromTitle(title) {
+    return title.trim().replace(/\s\(undefined\sstep\)$/, '');
   }
 
   /**
