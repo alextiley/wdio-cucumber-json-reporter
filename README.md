@@ -41,6 +41,8 @@ As long as the JSON reports are generated, you can then add something like the b
   ...
   onComplete: () => {
     if (existsSync('./some/output/dir/report.json')) {
+      const htmlReporter = require('multiple-cucumber-html-reporter');
+      
       htmlReporter.generate({
         pageTitle: `My report page title`,
         reportName: `Cucumber test report`,
